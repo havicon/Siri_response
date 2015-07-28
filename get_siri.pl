@@ -40,6 +40,17 @@ if ($siri =~ /(電気|ライト)(を|)(つけて|ONにして)|部屋..(少し|�
 		$Config->{_}->{cooltog} = 1;
 		$Config->write( 'datalog.conf' );
 	}
+#冷房OFF
+} elsif ($siri =~ /(冷房|クーラー|エアコン)(を|)消して/) {
+	if ($cooltog == 0) {
+		print "すでに冷房は消えていますが、念のためもう一度送信しますね \n";
+		my $result = `./reibo-stop.sh > /dev/null &`;
+	} elsif ($cooltog == 1) {
+		print "かしこまりました、冷房を止めますね \n";
+		$Config->{_}->{cooltog} = 0;
+		$Config->write( 'datalog.conf' );
+		my $result = `./reibo-stop.sh > /dev/null &`;
+	}
 #冷房ON,調整
 } elsif ($siri =~ /(少し|ちょっと|かなり|)暑い(..す|よ|)/) {
 	if ($cooltog == 1) {
@@ -65,8 +76,8 @@ if ($siri =~ /(電気|ライト)(を|)(つけて|ONにして)|部屋..(少し|�
 } elsif ($siri =~ /(少し|ちょっと|かなり|)寒い(..す|よ|)/) {
 	if ($cooltog == 1) {
 
-		my $cooldown = $coolvalue;
-		$coolup;
+		my $coolup = $coolvalue;
+		$coolup++;
 
 		print "かしこまりました、冷房を" . $coolvalue . "度から" . $coolup . "度に下げますね \n";
 
@@ -86,10 +97,13 @@ if ($siri =~ /(電気|ライト)(を|)(つけて|ONにして)|部屋..(少し|�
 } elsif ($siri =~ /(冷房|クーラー|エアコン)を(1[8-9]|2[0-9]|30)度に設定して/) {
 	if ($cooltog == 1) {
 		print "かしこまりました、冷房を" . $2 . "度に変更しますね \n";
+		$Config->{_}->{coolvalue} = $2;
+		$Config->write( 'datalog.conf' );
 		my $result = `arduino_ir_remote -write cool$2 > /dev/null &`;
 	} elsif ($cooltog == 0) {
-		print "かしこまりました、冷房を" . $2 . "度で入れますね";
+		print "かしこまりました、冷房を" . $2 . "度で入れますね \n";
 		$Config->{_}->{cooltog} = 1;
+		$Config->{_}->{coolvalue} = $2;
 		$Config->write( 'datalog.conf' );
 		my $result = `arduino_ir_remote -write cool$2 > /dev/null &`;
 	} else {
